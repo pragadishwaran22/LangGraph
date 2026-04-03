@@ -1,13 +1,14 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
-from langchain.agents import initialize_agent
+from langchain.agents import create_agent
 from langchain_core.tools import tool
 from langchain_community.tools import TavilySearchResults
 import datetime
+import sys
 
 load_dotenv()
 
-llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+llm = ChatGoogleGenerativeAI(model="gemini-flash-latest")
 
 search_tool = TavilySearchResults(search_depth="basic")
 
@@ -18,12 +19,12 @@ def get_system_time(format: str = "%Y-%m-%d %H:%M:%S"):
 
 tools = [search_tool, get_system_time]
 
-agent = initialize_agent(
-    tools,
-    llm,
-    agent="zero-shot-react-description",
-    verbose=True
+agent = create_agent(
+    model=llm,
+    tools=tools,
 )
 
-response = agent.invoke("When was SpaceX's last launch?")
-print(response)
+response = agent.invoke({"messages": [("user", "give me a funny tweet about today's weather in chennai")]})
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+print(response["messages"][-1].content)
