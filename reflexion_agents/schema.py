@@ -4,7 +4,7 @@ from typing import List
 
 class Reflection(BaseModel):
     missing:str=Field(description="critrique of what is missing")
-    superflous:str=Field(description="critique of what is superflous")
+    superfluous:str=Field(description="critique of what is superflous")
 
 class AnswerQuestion(BaseModel):
     """answer the question"""
