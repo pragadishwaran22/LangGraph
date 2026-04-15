@@ -1,14 +1,15 @@
 import json
+from os import name
 from typing import List, Dict, Any
 from langchain_core.messages import AIMessage, BaseMessage, ToolMessage, HumanMessage
-from langchain_community.tools import TavilySearchResults, tavily_search
+from langchain_community.tools.tavily_search import TavilySearchResults
 
-tavily_tool = TavilySearchResults(max_result =5 )
+tavily_tool = TavilySearchResults(max_results=5)
 
 def tool_executor(state:List[BaseMessage]) -> List[BaseMessage]:
     last_ai_message : AIMessage = state[-1]
 
-    if not hasattr(last_ai_message, "tools_call") or not last_ai_message.tool_calls:
+    if not hasattr(last_ai_message, "tool_calls") or not last_ai_message.tool_calls:
         return[]
 
     tool_messages=[]
