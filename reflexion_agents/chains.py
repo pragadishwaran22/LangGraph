@@ -1,4 +1,4 @@
-from langchain.messages import HumanMessage
+from langchain.messages import HumanMessage,AIMessage
 import datetime
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -36,12 +36,23 @@ Return ONLY valid JSON.
 ).partial(time=lambda: datetime.datetime.now().isoformat())
 
 revise_instructions = """Revise your previous answer using the new information.
-    - You should use the previous critique to add important information to your answer.
-        - You MUST include numerical citations in your revised answer to ensure it can be verified.
-        - Add a "References" section to the bottom of your answer (which does not count towards the word limit). In form of:
-            - [1] https://example.com
-            - [2] https://example.com
-    - You should use the previous critique to remove superfluous information from your answer and make SURE it is not more than 250 words.
+Do Not return empty output
+
+- Use the critique to improve the answer.
+- Keep the answer under 250 words.
+- Include numerical citations in the answer like [1], [2].
+
+STRICT OUTPUT RULES:
+
+- Return ONLY valid JSON.
+- Do NOT include any text outside JSON.
+- Do NOT include a "References" section inside the answer.
+
+- You MUST include a separate field:
+  "references": ["https://example.com", "https://example.com"]
+
+- The "references" field must contain ONLY URLs.
+- The "answer" field must NOT contain URLs.
 """
 
 first_responder_prompt_template = actor_prompt_template.partial(
@@ -56,18 +67,14 @@ first_instruction = revise_instructions
 llm = ChatGoogleGenerativeAI(model="gemini-flash-latest")
 
 first_responder_chain = first_responder_prompt_template | llm | pydantic_parser_responder
+
+
 revisor_chain = revisor_prompt_template | llm | pydantic_parser_revisor
 
 
-query = "write me a blog on how small bussiness can leverage the use of AI for their growth"
-response = first_responder_chain.invoke({
-    "messages": [HumanMessage(content=query)]
-})
-print(response)
-revised = revisor_chain.invoke({
-    "messages":[HumanMessage(content = query),
-    HumanMessage(content = response.answer)]
-})
-print(revised)
+
+
+
+
 
 
