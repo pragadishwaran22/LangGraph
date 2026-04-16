@@ -1,5 +1,6 @@
 import json
 from os import name
+from sys import exception
 from typing import List, Dict, Any
 from langchain_core.messages import AIMessage, BaseMessage, ToolMessage, HumanMessage
 from langchain_community.tools.tavily_search import TavilySearchResults
@@ -9,31 +10,30 @@ tavily_tool = TavilySearchResults(max_results=5)
 def tool_executor(state:List[BaseMessage]) -> List[BaseMessage]:
     last_ai_message : AIMessage = state[-1]
 
-    if not hasattr(last_ai_message, "tool_calls") or not last_ai_message.tool_calls:
+    if not hasattr(last_ai_message, "content") or not last_ai_message.content:
         return[]
+        
+    data =json.loads(last_ai_message.content)    
+    search_queries = data.get("search_queries",[])
 
-    tool_messages=[]
+    if not search_queries:
+        return[]
+       
+    query_results = {}
 
-    for tool_call in last_ai_message.tool_calls:
-        if tool_call["name"] in ["AnswerQuestion", "ReviseAnswer"]:
-            call_id = tool_call["id"]
-            search_queries = tool_call["args"].get("search_queries", [])
+    for query in search_queries:
+        try:
+            result = tavily_tool.invoke(query)
+            query_results[query]=result
+        except Exception as e:
+            query_results[query] = {"error": str(e)}
+
+    return [
+        ToolMessage(content=json.dumps(query_results),tool_call_id="manual")
+    ]
+
+        
             
-            query_results = {}
-            for query in search_queries:
-                result = tavily_tool.invoke(query)
-                query_results[query] = result
-            
-           
-            tool_messages.append(
-                ToolMessage(
-                    content=json.dumps(query_results),
-                    tool_call_id=call_id
-                )
-            )
-    
-    return tool_messages
-
 
 
 # test_state = [
