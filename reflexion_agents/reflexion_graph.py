@@ -1,3 +1,4 @@
+from langchain.messages import AIMessage
 from langchain_core.messages import BaseMessage,ToolMessage
 from typing import List
 from langgraph.graph import END,MessageGraph
@@ -6,9 +7,22 @@ from tool_excutor import tool_executor
 
 graph = MessageGraph()
 
-graph.add_node("draft",first_responder_chain)
+def first_responder(state):
+    result=first_responder_chain.invoke({
+        "messages":state
+    })
+    return AIMessage(content=result.model_dump_json())
+
+def revisor_node(state):
+    result = revisor_chain.invoke({
+        "messages": state 
+    })
+
+    return AIMessage(content=result.model_dump_json())
+
+graph.add_node("draft",first_responder)
 graph.add_node("tool",tool_executor)
-graph.add_node("revisor",revisor_chain)
+graph.add_node("revisor",revisor_node)
 
 max_iteration = 1
 
@@ -33,5 +47,5 @@ response = app.invoke(
     "write about how a traditional local jwellery shop can turn into a big enterprise with leverage of AI"
 )
 
-
+print(response)
 
